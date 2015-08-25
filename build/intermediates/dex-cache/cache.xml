@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        jar="/Users/knaito/StudioProjects/BluetoothSampleApp/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/21.0.3/jars/classes.jar"
+        jumboMode="false"
+        revision="23.0.0"
+        sha1="81d42bf983a8741f4888a6e333e454e4a5e0eeb7">
+        <dex dex="/Users/knaito/StudioProjects/BluetoothSampleApp/app/build/intermediates/pre-dexed/debug/classes-61193501aac8d0d3175b6ab889cd38e64316d106.jar" />
+    </item>
+
+</items>
