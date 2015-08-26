@@ -17,6 +17,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -57,9 +58,10 @@ public class MainActivity extends ActionBarActivity {
 
 				@Override
 				public void run() {
-					TextView tv = (TextView) findViewById(R.id.server_side);
-					tv.setText( getString( R.string.server_side ) + " accepting...(" + mUuid.toString() + ")");
-					
+					TextView tv = (TextView) findViewById(R.id.text_serving);
+					tv.setText( " accepting...");
+                    setServingChecked(true);
+
 				} 
 				
 			});
@@ -71,8 +73,8 @@ public class MainActivity extends ActionBarActivity {
 
 				@Override
 				public void run() {
-					TextView tv = (TextView) findViewById(R.id.server_side);
-					tv.setText( getString( R.string.server_side ) + " accepted (" + mUuid.toString() + ")" );
+					TextView tv = (TextView) findViewById(R.id.text_serving);
+					tv.setText( " accepted " );
 					
 				} 
 				
@@ -86,47 +88,85 @@ public class MainActivity extends ActionBarActivity {
 
 				@Override
 				public void run() {
-					TextView tv = (TextView) findViewById(R.id.server_side);
-					tv.setText( getString( R.string.server_side ) );
-					
-				} 
+					TextView tv = (TextView) findViewById(R.id.text_serving);
+					tv.setText( "" );
+                    setServingChecked(false);
+                }
 				
 			});
 		}
 
 		
 	};
+
+    public void setServingChecked(boolean isChecked) {
+        Switch sw = (Switch) findViewById(R.id.switchServing);
+        sw.setChecked( isChecked );
+    }
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		mUuid = UUID.randomUUID();
+		String uuidString = SharedData.loadString(this,"UUID");
+		if (uuidString == null) {
+			mUuid = UUID.randomUUID();
+			SharedData.saveString(this,"UUID",mUuid.toString());
+		} else {
+			mUuid = UUID.fromString(uuidString);
+		}
 		Log.d(TAG, "UUID = " + mUuid.toString());
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-        Switch sw = (Switch) findViewById(R.id.toggleEnable);
-        sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+	}
+
+	@Override
+	protected void onStart() {
+		super.onStart();
+		showUUID();
+
+		Switch sw = (Switch) findViewById(R.id.switchServing);
+		sw.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                toggleEnable(isChecked);
+                if (isChecked) {
+                    if (mServerThread == null) {
+                        startServer(null);
+                    }
+                } else {
+                    if (mServerThread != null) {
+                        stopServer(null);
+                    }
+                }
             }
+
         });
 
-		showToggleEnableButton();
+//		Switch sw = (Switch) findViewById(R.id.toggleEnable);
+//		sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+//			@Override
+//			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+//				toggleEnable(isChecked);
+//			}
+//		});
+
+//		showToggleEnableButton();
+
 	}
-	
-	public void showToggleEnableButton() {
-        Switch sw = (Switch) findViewById(R.id.toggleEnable);
-		if (mBluetoothAdapter.isEnabled()) {
-            if (! sw.isChecked()) {
-                sw.setChecked(true);
-            }
-		} else {
-            if (sw.isChecked()) {
-                sw.setChecked(false);
-            }
-		}
-	}
+
+//	public void showToggleEnableButton() {
+//        // Switch sw = (Switch) findViewById(R.id.toggleEnable);
+//		if (mBluetoothAdapter.isEnabled()) {
+////            if (! sw.isChecked()) {
+////                sw.setChecked(true);
+////            }
+//
+//		} else {
+////            if (sw.isChecked()) {
+////                sw.setChecked(false);
+////            }
+//		}
+//	}
 	
 	public void toggleEnable(boolean isChecked) {
 		if (isChecked) {
@@ -135,9 +175,22 @@ public class MainActivity extends ActionBarActivity {
 		} else {
 			mBluetoothAdapter.disable();
 		}
-        showToggleEnableButton();
+//        showToggleEnableButton();
 	}
-	
+
+	public void refreshUUID(View v) {
+		mUuid = UUID.randomUUID();
+		SharedData.saveString(this,"UUID",mUuid.toString());
+		showUUID();
+	}
+
+	public void showUUID() {
+		if (mUuid != null) {
+			TextView v = (TextView) findViewById(R.id.text_uuid);
+			v.setText(mUuid.toString());
+		}
+	}
+
 	public void startDiscoverable(View v) {
 		if (!mBluetoothAdapter.isEnabled()) {
 			alertDialog("Warning", "Bluetoothが有効になっていません");
@@ -151,6 +204,7 @@ public class MainActivity extends ActionBarActivity {
 	
 	public void startServer(View v) {
 		if (!mBluetoothAdapter.isEnabled()) {
+            setServingChecked(false);
 			alertDialog("Warning", "Bluetoothが有効になっていません");
 		} else {
 			if (mServerThread != null) {
@@ -187,6 +241,7 @@ public class MainActivity extends ActionBarActivity {
 		tv.setText( "" );
 
 	}
+
 	public void alertDialog(String title,String message) {
 		AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
 		alertDialog.setTitle(title);
@@ -208,7 +263,7 @@ public class MainActivity extends ActionBarActivity {
 	@Override
 	protected void onResume() {
 		super.onResume();
-		showToggleEnableButton();
+//		showToggleEnableButton();
 	}
 
 	@Override
@@ -219,13 +274,9 @@ public class MainActivity extends ActionBarActivity {
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (requestCode == REQUEST_ENABLE_BT) {
-			showToggleEnableButton();
-		} else if (requestCode == REQUEST_DISCOVERABLE_BT) {
-//			if (mBluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
-//				
-//			}
-		}
+//		if (requestCode == REQUEST_ENABLE_BT) {
+//		} else if (requestCode == REQUEST_DISCOVERABLE_BT) {
+//		}
 		
 		super.onActivityResult(requestCode, resultCode, data);
 	}
@@ -236,19 +287,42 @@ public class MainActivity extends ActionBarActivity {
 		tv.setText( text + message + "\n");
 	}
 
-	public static int MENU_ID_CLIENT_MODE = 1;
+	public static int MENU_ID_TOOGLE_BLUETOOTH = 1;
+	public static int MENU_ID_CLIENT_MODE = 2;
+
+	public static String BLUETOOTH_ON = "Bluetooth On";
+	public static String BLUETOOTH_OFF= "Bluetooth Off";
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        MenuItem actionItem = menu.add(Menu.NONE,MENU_ID_CLIENT_MODE,Menu.NONE,"Client Mode");
+        MenuItem actionItem;
+
+		actionItem = menu.add(Menu.NONE,MENU_ID_TOOGLE_BLUETOOTH,Menu.NONE,BLUETOOTH_ON);
+		actionItem.setIcon(android.R.drawable.ic_menu_manage);
+		actionItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_WITH_TEXT);
+
+		actionItem = menu.add(Menu.NONE,MENU_ID_CLIENT_MODE,Menu.NONE,"Client Mode");
         actionItem.setIcon(android.R.drawable.ic_menu_manage);
         actionItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_WITH_TEXT);
         return true;
     }
 
-    @Override
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		MenuItem item = menu.findItem(MENU_ID_TOOGLE_BLUETOOTH);
+		if (mBluetoothAdapter.isEnabled()) {
+			item.setTitle(BLUETOOTH_OFF);
+		} else {
+			item.setTitle(BLUETOOTH_ON);
+		}
+			return super.onPrepareOptionsMenu(menu);
+	}
+
+	@Override
     public boolean onOptionsItemSelected(MenuItem item) {
-		if (item.getItemId() == MENU_ID_CLIENT_MODE) {
+		if (item.getItemId() == MENU_ID_TOOGLE_BLUETOOTH) {
+			toggleEnable( ! mBluetoothAdapter.isEnabled() );
+		} else if (item.getItemId() == MENU_ID_CLIENT_MODE) {
 			//	Toast.makeText(this, "Selected Item", Toast.LENGTH_SHORT).show();
 			Intent intent = new Intent(this,ClientActivity.class);
 			startActivity(intent);

@@ -5,11 +5,14 @@
     <string name="hello_world">Hello world!</string>
     <string name="server_side">ServerSide</string>
     <string name="client_side">ClientSide</string>
-    <string name="start_discoverable">StartDiscoverable</string>
+    <string name="start_discoverable">Start</string>
     <string name="start_server">StartServer</string>
     <string name="stop_server">StopServer</string>
     <string name="clear_data">Clear</string>
     <string name="result">Received Data</string>
     <string name="write_data">Write Data</string>
     <string name="write_button">Write</string>
+    <string name="device_empty">----------------------------</string>
+    <string name="uuid_empty">----------------------------</string>
+
 </resources>
