@@ -376,6 +376,40 @@ public class ClientActivity extends ActionBarActivity {
             }
         });
 
+        final Context context = this;
+
+        List<String> list = new ArrayList<String>();
+        ListView lv = (ListView) myview.findViewById(R.id.listUUIDs);
+        ArrayAdapter<String> adapter = new CustomArrayAdapter<String>(context,R.layout.row_device,list) {
+            private LayoutInflater layoutInflater;
+
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                String item = getItem(position);
+                if (null == convertView) {
+                    if (layoutInflater == null) {
+                        layoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                    }
+                    convertView = layoutInflater.inflate(R.layout.row_uuid,null);
+                }
+
+                TextView textView = (TextView) convertView.findViewById(R.id.row_textview1);
+                textView.setText( item );
+
+                return convertView;
+            }
+        };
+        lv.setAdapter(adapter);
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                ListView listView = (ListView) parent;
+                String uuid  =  (String) listView.getItemAtPosition(position);
+                setTargetUUID( UUID.fromString(uuid) );
+                dialog2.dismiss();
+            }
+        });
+
         device.fetchUuidsWithSdp();
 
         Button btnCancel = (Button) myview.findViewById(R.id.btnCancel);
@@ -453,6 +487,27 @@ public class ClientActivity extends ActionBarActivity {
             } else if (BluetoothDevice.ACTION_UUID.equals(action)) {
                 BluetoothDevice foundDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 Parcelable[] uuids = intent.getParcelableArrayExtra(BluetoothDevice.EXTRA_UUID);
+
+                if (dialog2 != null) {
+                    ProgressBar progressBar = (ProgressBar) dialog2.findViewById(R.id.progressBar);
+                    if (progressBar != null) {
+                        progressBar.setVisibility(View.GONE);
+                    }
+                    ListView lv = (ListView) dialog2.findViewById(R.id.listUUIDs);
+                    ArrayAdapter<String> adapter = (ArrayAdapter<String>) lv.getAdapter();
+                    adapter.clear();
+
+                    for (Parcelable uuid : uuids) {
+                        adapter.add( uuid.toString() );
+                    }
+//                    for ( BluetoothDevice device : devices ) {
+//                        TargetDevice targetDevice = convertTargetDeviceFromBluetoothDevice(device);
+//                        deviceList.add( targetDevice );
+//                    }
+
+
+                }
+
 
             }
         }

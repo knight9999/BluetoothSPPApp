@@ -2,32 +2,32 @@
 <items version="2" >
 
     <item
+        jar="/Users/knaito/Documents/AndroidStudioProjects/BluetoothSPPApp/app/build/intermediates/exploded-aar/com.android.support/support-v4/21.0.3/jars/classes.jar"
+        jumboMode="false"
+        revision="23.0.0"
+        sha1="2c91c949a45a21cdecf26e03951e46c7beec9ad8">
+        <dex dex="/Users/knaito/Documents/AndroidStudioProjects/BluetoothSPPApp/app/build/intermediates/pre-dexed/debug/classes-f44cc3208aeeef40e5a147853e5428100949ca88.jar" />
+    </item>
+    <item
         jar="/Users/knaito/Library/Android/sdk/extras/android/m2repository/com/android/support/support-annotations/21.0.3/support-annotations-21.0.3.jar"
         jumboMode="false"
         revision="23.0.0"
         sha1="4b74cefe1f0c1b819e7260c8627a14674e37fd35">
-        <dex dex="/Users/knaito/StudioProjects/BluetoothSPPApp/app/build/intermediates/pre-dexed/debug/support-annotations-21.0.3-07b6b7085679ccacfa82f4b2ef4b6abbbeebf2ec.jar" />
+        <dex dex="/Users/knaito/Documents/AndroidStudioProjects/BluetoothSPPApp/app/build/intermediates/pre-dexed/debug/support-annotations-21.0.3-07b6b7085679ccacfa82f4b2ef4b6abbbeebf2ec.jar" />
     </item>
     <item
-        jar="/Users/knaito/StudioProjects/BluetoothSPPApp/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/21.0.3/jars/classes.jar"
+        jar="/Users/knaito/Documents/AndroidStudioProjects/BluetoothSPPApp/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/21.0.3/jars/classes.jar"
         jumboMode="false"
         revision="23.0.0"
         sha1="81d42bf983a8741f4888a6e333e454e4a5e0eeb7">
-        <dex dex="/Users/knaito/StudioProjects/BluetoothSPPApp/app/build/intermediates/pre-dexed/debug/classes-34b7bb232ce61b58cdaf0c0e470c7ede6ff9dd54.jar" />
+        <dex dex="/Users/knaito/Documents/AndroidStudioProjects/BluetoothSPPApp/app/build/intermediates/pre-dexed/debug/classes-9d501d54a2f4250eac9041d701f9828b2a5cd8bc.jar" />
     </item>
     <item
-        jar="/Users/knaito/StudioProjects/BluetoothSPPApp/app/build/intermediates/exploded-aar/com.android.support/support-v4/21.0.3/jars/classes.jar"
-        jumboMode="false"
-        revision="23.0.0"
-        sha1="2c91c949a45a21cdecf26e03951e46c7beec9ad8">
-        <dex dex="/Users/knaito/StudioProjects/BluetoothSPPApp/app/build/intermediates/pre-dexed/debug/classes-a79a543b30b9245685235cedebc7fcc37f418e5a.jar" />
-    </item>
-    <item
-        jar="/Users/knaito/StudioProjects/BluetoothSPPApp/app/build/intermediates/exploded-aar/com.android.support/support-v4/21.0.3/jars/libs/internal_impl-21.0.3.jar"
+        jar="/Users/knaito/Documents/AndroidStudioProjects/BluetoothSPPApp/app/build/intermediates/exploded-aar/com.android.support/support-v4/21.0.3/jars/libs/internal_impl-21.0.3.jar"
         jumboMode="false"
         revision="23.0.0"
         sha1="01ec05bfbafcc07646ba813000bf2ef11742dd03">
-        <dex dex="/Users/knaito/StudioProjects/BluetoothSPPApp/app/build/intermediates/pre-dexed/debug/internal_impl-21.0.3-5d3af7bfa0185562cd635b61c2b37a540b212f2d.jar" />
+        <dex dex="/Users/knaito/Documents/AndroidStudioProjects/BluetoothSPPApp/app/build/intermediates/pre-dexed/debug/internal_impl-21.0.3-dad1727b9585904b5cbc7f73cf66b42d06935ead.jar" />
     </item>
 
 </items>
