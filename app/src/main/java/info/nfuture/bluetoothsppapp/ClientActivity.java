@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Point;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Display;
@@ -26,6 +27,7 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -40,13 +42,14 @@ public class ClientActivity extends ActionBarActivity {
     private final String TAG = getClass().getSimpleName();
     private final BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-    private static final String TARGET_DEVICE_NAME = "TargetDeviceName";
+    private static final String TARGET_DEVICE = "TargetDevice";
     private static final String TARGET_UUID = "TargetUUID";
 
-    private String mTargetDeviceName = null;
+    private TargetDevice mTargetDevice = null;
     private String mTargetUUID = null;
 
     private AlertDialog dialog = null;
+    private AlertDialog dialog2 = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,7 +61,7 @@ public class ClientActivity extends ActionBarActivity {
     protected void onStart() {
         super.onStart();
 
-        mTargetDeviceName = SharedData.loadString(this, TARGET_DEVICE_NAME);
+        mTargetDevice = loadTargetDevice();
         mTargetUUID = SharedData.loadString(this, TARGET_UUID);
 
         showTargetDevice();
@@ -74,6 +77,7 @@ public class ClientActivity extends ActionBarActivity {
         filter.addAction(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothDevice.ACTION_NAME_CHANGED);
         filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        filter.addAction(BluetoothDevice.ACTION_UUID);
         registerReceiver(receiver, filter);
 
     }
@@ -95,13 +99,33 @@ public class ClientActivity extends ActionBarActivity {
 
 
     public void setTargetDevice(TargetDevice targetDevice) {
-        mTargetDeviceName = targetDevice.name;
-        if (mTargetDeviceName != null) {
-            SharedData.saveString(this, TARGET_DEVICE_NAME, mTargetDeviceName);
-        } else {
-            SharedData.remove(this, TARGET_DEVICE_NAME);
-        }
+        mTargetDevice = targetDevice;
+        saveTargetDevice(mTargetDevice);
         showTargetDevice();
+    }
+
+    public TargetDevice loadTargetDevice() {
+        String name = SharedData.loadString(this, TARGET_DEVICE + ".NAME" );
+        String address = SharedData.loadString(this, TARGET_DEVICE + ".ADDRESS" );
+        if (name != null && address != null) {
+            TargetDevice targetDevice = new TargetDevice();
+            targetDevice.name = name;
+            targetDevice.address = address;
+            return targetDevice;
+        }
+        return null;
+    }
+
+    public void saveTargetDevice(TargetDevice targetDevice) {
+        if (targetDevice != null) {
+            String name = targetDevice.name;
+            String address = targetDevice.address;
+            SharedData.saveString(this, TARGET_DEVICE + ".NAME", name);
+            SharedData.saveString(this, TARGET_DEVICE + ".ADDRESS", address);
+        } else {
+            SharedData.remove(this, TARGET_DEVICE + ".NAME");
+            SharedData.remove(this, TARGET_DEVICE + ".ADDRESS");
+        }
     }
 
     public void setTargetUUID(UUID uuid) {
@@ -116,10 +140,13 @@ public class ClientActivity extends ActionBarActivity {
 
     public void showTargetDevice() {
         TextView textView = (TextView) findViewById(R.id.text_device);
-        if (mTargetDeviceName != null) {
-            textView.setText(mTargetDeviceName);
+        TextView textView2 = (TextView) findViewById(R.id.text_device_address);
+        if (mTargetDevice != null) {
+            textView.setText(mTargetDevice.name);
+            textView2.setText(mTargetDevice.address);
         } else {
             textView.setText(R.string.device_empty);
+            textView2.setText("----------");
         }
     }
 
@@ -149,15 +176,15 @@ public class ClientActivity extends ActionBarActivity {
     }
 
     public void searchDevice(View v) {
-//        Display display = getWindowManager().getDefaultDisplay();
-//        Point size = new Point();
-//        display.getSize(size);
 
         final ViewGroup myview = (ViewGroup) getLayoutInflater().inflate(R.layout.view_select_devices,null);
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Select Device");
         builder.setView(myview);
 
+        if (dialog != null) {
+            dialog.dismiss();
+        }
         dialog = builder.create();
         dialog.show();
         dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
@@ -169,8 +196,6 @@ public class ClientActivity extends ActionBarActivity {
                 }
             }
         });
-//        dialog.getWindow().setLayout( (int) (size.x*0.8) , 2000 );
-//        dialog.getWindow().setLayout( (int) (size.x*0.8) , (int) (size.y*0.8) );
 
         List<TargetDevice> deviceList = getTargetDeviceList();
 
@@ -190,6 +215,9 @@ public class ClientActivity extends ActionBarActivity {
                 }
                 TextView textView = (TextView) convertView.findViewById(R.id.row_textview1);
                 textView.setText( item.name );
+
+                textView = (TextView) convertView.findViewById(R.id.row_textview2);
+                textView.setText( item.address );
                 return convertView;
             }
         };
@@ -202,6 +230,41 @@ public class ClientActivity extends ActionBarActivity {
                 TargetDevice targetDevice = (TargetDevice) listView.getItemAtPosition(position);
                 setTargetDevice(targetDevice);
                 dialog.dismiss();
+            }
+        });
+
+        Button btnClear = (Button) myview.findViewById(R.id.btnClear);
+        btnClear.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                ListView lv = (ListView) dialog.findViewById(R.id.listDevices);
+                ArrayAdapter adapter = (ArrayAdapter) lv.getAdapter();
+                adapter.clear();
+
+                for (BluetoothDevice device : mBluetoothAdapter.getBondedDevices() ) {
+                    if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
+                        Method removeBond = null;
+                        try {
+                            removeBond = device.getClass().getMethod("removeBond");
+                            removeBond.invoke(device);
+                        } catch (NoSuchMethodException e) {
+                            e.printStackTrace();
+                        } catch (InvocationTargetException e) {
+                            e.printStackTrace();
+                        } catch (IllegalAccessException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+
+                List<TargetDevice> deviceList = getTargetDeviceList();
+                for (TargetDevice targetDevice : deviceList) {
+                    adapter.add(targetDevice);
+                }
+
+                adapter.notifyDataSetChanged();
+
             }
         });
 
@@ -218,6 +281,12 @@ public class ClientActivity extends ActionBarActivity {
 
             @Override
             public void onClick(View v) {
+
+                if (!mBluetoothAdapter.isEnabled()) {
+                    Toast.makeText(ClientActivity.this,"Set Bluetooth On",Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 ListView lv = (ListView) dialog.findViewById(R.id.listDevices);
                 ArrayAdapter adapter = (ArrayAdapter) lv.getAdapter();
                 adapter.clear();
@@ -231,21 +300,7 @@ public class ClientActivity extends ActionBarActivity {
 
                 ProgressBar progressBar = (ProgressBar) myview.findViewById(R.id.progressBar);
                 progressBar.setVisibility(View.VISIBLE);
-//                for (BluetoothDevice device : mBluetoothAdapter.getBondedDevices() ) {
-//                    if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
-//                        Method removeBond = null;
-//                        try {
-//                            removeBond = device.getClass().getMethod("removeBond");
-//                            removeBond.invoke(device);
-//                        } catch (NoSuchMethodException e) {
-//                            e.printStackTrace();
-//                        } catch (InvocationTargetException e) {
-//                            e.printStackTrace();
-//                        } catch (IllegalAccessException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                };
+
                 if (mBluetoothAdapter.isDiscovering()) {
                     mBluetoothAdapter.cancelDiscovery();
                 }
@@ -272,8 +327,64 @@ public class ClientActivity extends ActionBarActivity {
         return targetDevice;
     }
 
-    public void searchUuid(View v) {
+    public void createBond(BluetoothDevice device) {
+        Method createBond = null;
+        Boolean result = true;
+        try {
+            createBond = device.getClass().getMethod("createBond");
+            result = (Boolean) createBond.invoke(device);
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        if (result == false) {
+            Toast.makeText(this,"Filas to start the bonding process ",Toast.LENGTH_SHORT).show();
+        }
+    }
 
+    public void searchUuid(View v) {
+        if (mTargetDevice == null) {
+            Toast.makeText(this,"Please select Device.",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(mTargetDevice.address);
+        if (device == null) {
+            Toast.makeText(this,"Please select Device.",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
+            createBond(device);
+        }
+
+        final ViewGroup myview = (ViewGroup) getLayoutInflater().inflate(R.layout.view_select_uuids,null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select UUID");
+        builder.setView(myview);
+
+        if (dialog2 != null) {
+            dialog2.dismiss();
+        }
+        dialog2 = builder.create();
+        dialog2.show();
+        dialog2.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                dialog2 = null;
+            }
+        });
+
+        device.fetchUuidsWithSdp();
+
+        Button btnCancel = (Button) myview.findViewById(R.id.btnCancel);
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog2.dismiss();
+            }
+        });
 
     }
 
@@ -297,11 +408,13 @@ public class ClientActivity extends ActionBarActivity {
                 if (foundDevice.getName() != null) {
                     if (foundDevice.getBondState() != BluetoothDevice.BOND_BONDED) {
                         TargetDevice targetDevice = convertTargetDeviceFromBluetoothDevice(foundDevice);
-                        ListView lv = (ListView) dialog.findViewById(R.id.listDevices);
-                        CustomArrayAdapter adapter = (CustomArrayAdapter) lv.getAdapter();
-                        if (! adapter.contains(targetDevice)) {
-                            adapter.add(targetDevice);
-                            adapter.notifyDataSetChanged();
+                        if (dialog != null) {
+                            ListView lv = (ListView) dialog.findViewById(R.id.listDevices);
+                            CustomArrayAdapter adapter = (CustomArrayAdapter) lv.getAdapter();
+                            if (!adapter.contains(targetDevice)) {
+                                adapter.add(targetDevice);
+                                adapter.notifyDataSetChanged();
+                            }
                         }
                     }
                 }
@@ -310,12 +423,14 @@ public class ClientActivity extends ActionBarActivity {
                 if (foundDevice.getName() != null) {
                     int bondState = foundDevice.getBondState();
                     if (bondState != BluetoothDevice.BOND_BONDED) {
-                        TargetDevice targetDevice = convertTargetDeviceFromBluetoothDevice(foundDevice);
-                        ListView lv = (ListView) dialog.findViewById(R.id.listDevices);
-                        CustomArrayAdapter adapter = (CustomArrayAdapter) lv.getAdapter();
-                        if (! adapter.contains(targetDevice)) {
-                            adapter.add(targetDevice);
-                            adapter.notifyDataSetChanged();
+                        if (dialog != null) {
+                            TargetDevice targetDevice = convertTargetDeviceFromBluetoothDevice(foundDevice);
+                            ListView lv = (ListView) dialog.findViewById(R.id.listDevices);
+                            CustomArrayAdapter adapter = (CustomArrayAdapter) lv.getAdapter();
+                            if (!adapter.contains(targetDevice)) {
+                                adapter.add(targetDevice);
+                                adapter.notifyDataSetChanged();
+                            }
                         }
                     }
                 }
@@ -324,15 +439,21 @@ public class ClientActivity extends ActionBarActivity {
                 if (foundDevice.getName() != null) {
                     int bondState = foundDevice.getBondState();
                     if (bondState != BluetoothDevice.BOND_BONDED) {
-                        TargetDevice targetDevice = convertTargetDeviceFromBluetoothDevice(foundDevice);
-                        ListView lv = (ListView) dialog.findViewById(R.id.listDevices);
-                        CustomArrayAdapter adapter = (CustomArrayAdapter) lv.getAdapter();
-                        if (!adapter.contains(targetDevice)) {
-                            adapter.add(targetDevice);
-                            adapter.notifyDataSetChanged();
+                        if (dialog != null) {
+                            TargetDevice targetDevice = convertTargetDeviceFromBluetoothDevice(foundDevice);
+                            ListView lv = (ListView) dialog.findViewById(R.id.listDevices);
+                            CustomArrayAdapter adapter = (CustomArrayAdapter) lv.getAdapter();
+                            if (!adapter.contains(targetDevice)) {
+                                adapter.add(targetDevice);
+                                adapter.notifyDataSetChanged();
+                            }
                         }
                     }
                 }
+            } else if (BluetoothDevice.ACTION_UUID.equals(action)) {
+                BluetoothDevice foundDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                Parcelable[] uuids = intent.getParcelableArrayExtra(BluetoothDevice.EXTRA_UUID);
+
             }
         }
     };

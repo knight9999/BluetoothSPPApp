@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "info.nfuture.bluetoothsppapp"
-        minSdkVersion 14
+        minSdkVersion 15
         targetSdkVersion 21
     }
 
